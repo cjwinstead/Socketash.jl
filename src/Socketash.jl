@@ -77,6 +77,58 @@ errormonitor(
     )
 end
 
+#= register_module(module_name::String)
+
+Expose all exported functions from the specified module
+as server commands
+=#
+function register_module(m::Module)
+    command_dict = Dict{String,Function}()
+    register_module!(command_dict,m)
+end
+
+#= register_module(command_dict::Dict,module_name::String)
+
+Expose all exported functions from the specified module
+as server commands
+=#
+function register_module!(command_dict::Dict{String,Function},m::Module)    
+    for x in names(m)
+        #        if typeof(getfield(m,x)) <: Function
+        register_function!(command_dict,m,getfield(m,x))
+#        command_dict[string(nameof(m),".",x)]=getfield(m,x)
+#        end
+    end
+    return command_dict
+end
+
+function register_function!(command_dict::Dict{String,Function},m::Module,f::Function)
+    @info "Registering symbol " f
+    command_dict[string(nameof(m),".",f)] = f
+end
+
+function register_function!(command_dict::Dict{String,Function},f::Symbol)
+    @info "Registering symbol " f
+    register_function!(command_dict, string(f), getfield(Main,f))
+end
+
+function register_function!(command_dict::Dict{String,Function},fname::String,f::Function)
+    @info "Registering symbol " f
+    command_dict[fname] = f
+end
+
+function register_function!(command_dict::Dict{String,Function},f::Any)
+    @info "Ignoring symbol " f
+end
+
+function register_function!(command_dict::Dict{String,Function},m::Module,f::Any)
+    @info "Ignoring symbol $(f) in module $(m)"
+end
+
+
+export register_function!
+export register_module
+export register_module!
 export start_server
 
 end
